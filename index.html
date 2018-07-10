@@ -46,9 +46,6 @@
 </body>
 <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
 <script>
-    window.onload = () => {
-        navigator.serviceWorker.register('./sw.js');
-    }
     const app = new Vue({
         el: '#app',
         data() {
@@ -59,7 +56,6 @@
                     icon: './img/favicon.ico',
                     vibrate: [200, 100, 200, 100, 200, 100, 200],
                     tag: 'zhoucuole',
-                    renotify: true,
                     requireInteraction: true,
                     image: './img/bg.jpg',
                     actions: [{
@@ -68,20 +64,32 @@
                             icon: './img/猜你喜欢.png'
                         },
                         {
-                            action: '发现激活',
-                            title: '发现激活',
+                            action: '发现更多',
+                            title: '发现更多',
                             icon: './img/发现激活.png'
                         }
                     ]
                 }
             }
         },
+        mounted() {
+            navigator.serviceWorker.register('./sw.js');
+        },
         methods: {
             showNotification() {
                 Notification.requestPermission((result) => {
                     if (result === 'granted') {
                         navigator.serviceWorker.ready.then((registration) => {
-                            registration.showNotification(this.title, this.options);
+                            registration.showNotification(this.title, this.options).then(() => {
+                                registration.getNotifications({
+                                    tag: 'zhoucuole'
+                                }).then(notification => {
+                                    console.log(notification)
+                                    setTimeout(() => {
+                                        notification[0].close()
+                                    }, 5000)
+                                })
+                            });
                         });
                     }
                 });
