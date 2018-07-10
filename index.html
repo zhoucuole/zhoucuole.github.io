@@ -4,41 +4,43 @@
 <head>
     <meta charset="utf-8" />
     <title>Notification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,minimum=1.0,user-scalable=no">
+    <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
         crossorigin="anonymous">
 </head>
 
 <body>
-    <div id="app" style="padding-top:100px;max-width: 50%;margin: 0 auto;">
+    <div id="app" style="padding-top:100px;" class="col-xs-12 col-sm-6">
         <form class="form-horizontal">
             <div class="form-group">
-                <label class="col-sm-2 control-label">Title</label>
-                <div class="col-sm-10">
+                <label class="col-sm-2 col-xs-2 control-label">Title</label>
+                <div class="col-sm-10 col-xs-10">
                     <input v-model="title" class="form-control" placeholder="Title">
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">Body</label>
-                <div class="col-sm-10">
+                <label class="col-sm-2 col-xs-2 control-label">Body</label>
+                <div class="col-sm-10 col-xs-10">
                     <input v-model="options.body" class="form-control" placeholder="Body">
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">icon</label>
-                <div class="col-sm-10">
+                <label class="col-sm-2 col-xs-2 control-label">icon</label>
+                <div class="col-sm-10 col-xs-10">
                     <input v-model="options.icon" class="form-control" placeholder="icon's url">
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">image</label>
-                <div class="col-sm-10">
+                <label class="col-sm-2 col-xs-2 control-label">image</label>
+                <div class="col-sm-10 col-xs-10">
                     <input v-model="options.image" class="form-control" placeholder="images's url">
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="button" class="btn btn-primary">Notification</button>
-                    <button @click="showNotification" type="button" class="btn btn-success">ServiceWorker-Notification</button>
+                <div class="col-sm-offset-2 col-sm-10 col-xs-offset-2 col-xs-10">
+                    <button @click="showNotification" type="button" class="btn btn-success">Sw-Notice</button>
+                    <button type="button" class="btn btn-primary">Notice</button>
                 </div>
             </div>
         </form>
@@ -80,16 +82,7 @@
                 Notification.requestPermission((result) => {
                     if (result === 'granted') {
                         navigator.serviceWorker.ready.then((registration) => {
-                            registration.showNotification(this.title, this.options).then(() => {
-                                registration.getNotifications({
-                                    tag: 'zhoucuole'
-                                }).then(notification => {
-                                    console.log(notification)
-                                    setTimeout(() => {
-                                        notification[0].close()
-                                    }, 5000)
-                                })
-                            });
+                            registration.showNotification(this.title, this.options)
                         });
                     }
                 });

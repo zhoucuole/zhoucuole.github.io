@@ -11,14 +11,7 @@ self.addEventListener('notificationclick', event => {
             let promiseChain = clients.openWindow('//www.batmobi.net');
             event.waitUntil(promiseChain);
             break;
-        case 'doughnut-action':
-            console.log('User \'s doughnuts.');
-            break;
-        case 'gramophone-action':
-            console.log('User \'s music.');
-            break;
-        case 'atom-action':
-            console.log('User \'s science.');
+        case '猜你喜欢':
             break;
         default:
             console.log(`Unknown action clicked: '${event.action}'`);
