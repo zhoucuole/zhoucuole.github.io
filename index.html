@@ -100,7 +100,7 @@
                 });
             },
             Notification() {
-                let Notification =  || window.mozNotification || window.webkitNotification;
+                let Notification = window.Notification || window.mozNotification || window.webkitNotification;
                 if (!Notification) {
                     alert("您的浏览器不支持此特性");
                     return false;
