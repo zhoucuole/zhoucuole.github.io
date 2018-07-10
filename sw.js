@@ -8,10 +8,10 @@ self.addEventListener('notificationclick', event => {
 
     switch (event.action) {
         case '发现更多':
-            let promiseChain = clients.openWindow('//www.batmobi.net');
-            event.waitUntil(promiseChain);
+            event.waitUntil(clients.openWindow('//www.batmobi.net'));
             break;
         case '猜你喜欢':
+            event.waitUntil(clients.openWindow('//www.batmobi.net'));
             break;
         default:
             console.log(`Unknown action clicked: '${event.action}'`);

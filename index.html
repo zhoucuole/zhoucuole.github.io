@@ -50,7 +50,7 @@
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10 col-xs-offset-2 col-xs-10">
                     <button @click="showNotification" type="button" class="btn btn-success">Sw-Notice</button>
-                    <button type="button" class="btn btn-primary">Notice</button>
+                    <button @click="Notification" type="button" class="btn btn-primary">Notice</button>
                 </div>
             </div>
         </form>
@@ -68,8 +68,9 @@
                     icon: './img/favicon.ico',
                     vibrate: [200, 100, 200, 100, 200, 100, 200],
                     tag: 'zhoucuole',
-                    requireInteraction: true,
                     image: './img/bg.jpg',
+                },
+                actions: {
                     actions: [{
                             action: '猜你喜欢',
                             title: '猜你喜欢',
@@ -92,10 +93,29 @@
                 Notification.requestPermission((result) => {
                     if (result === 'granted') {
                         navigator.serviceWorker.ready.then((registration) => {
-                            registration.showNotification(this.title, this.options)
+                            registration.showNotification(this.title, Object.assign(this.actions,
+                                this.options))
                         });
                     }
                 });
+            },
+            Notification() {
+                let Notification =  || window.mozNotification || window.webkitNotification;
+                if (!Notification) {
+                    alert("您的浏览器不支持此特性");
+                    return false;
+                }
+                if (Notification && window.Notification.permission != "granted") {
+                    //支持,但是未开启桌面提醒，进行相关操作、或提示开启
+                    window.Notification.requestPermission();
+                } else {
+                    if (window.Notification.permission === "granted") {
+                        //支持并且开启桌面消息提醒
+                        const instance = new Notification(this.title, this.options);
+                        instance.onclick = () => instance.close();
+                        instance.onshow = () => setTimeout(() => instance.close(), 5000);
+                    }
+                }
             }
         }
     })
