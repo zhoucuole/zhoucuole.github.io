@@ -18,3 +18,15 @@ self.addEventListener('notificationclick', event => {
             break;
     }
 });
+
+self.addEventListener('push', (e) => {
+    let data = e.data;
+    console.log(e)
+    if (e.data) {
+        data = JSON.parse(data.json());
+        console.log('push的数据为：', data);
+        self.registration.showNotification(data.title, data.options)
+    } else {
+        console.log('push没有任何数据');
+    }
+});
