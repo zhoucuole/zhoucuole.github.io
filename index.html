@@ -185,7 +185,9 @@
                                 pushSubscription,
                                 id: Math.random().toString(32).substring(2)
                             }
-                            axios.post('https://192.168.1.55:8000/port/subscribe', body)
+                            axios.post(
+                                    'https://test-subscribe.batmobi.net/port/subscribe',
+                                    body)
                                 .then((res) => {
                                     this.text = res.data.message
                                 })
