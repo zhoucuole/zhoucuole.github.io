@@ -185,10 +185,9 @@
                                 pushSubscription,
                                 id: Math.random().toString(32).substring(2)
                             }
-                            axios.get(
-                                    'https://192.168.4.44:3000/port/subscribe', {
-                                        params: body
-                                    })
+                            axios.post(
+                                    'http://192.168.4.44:8000/port/subscribe',
+                                    body)
                                 .then((res) => {
                                     this.text = res.data.message
                                 })
