@@ -1,0 +1,266 @@
+<html>
+    <head>
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="upgrade-insecure-requests"
+        />
+    </head>
+    <body>
+        <div style="margin-bottom: 10px;">
+            <select id="chatbot">
+                <option value="90001002">机器人90001002</option>
+                <option value="1">机器人1</option>
+            </select>
+            <input id="text" type="text" />
+        </div>
+
+        <div>
+            <button id="connect">连接</button>
+            <button id="disconnect">结束</button>
+            <button id="sendText">文字输入</button>
+            <button id="start" class="ui-btn ui-btn-primary">
+                语音输入-录音
+            </button>
+            <button id="stop" class="ui-btn ui-btn-primary">
+                语音输入-停止
+            </button>
+        </div>
+        <div></div>
+        <audio></audio>
+        <div id="audio-container"></div>
+        <div
+            style="border:1px solid #000; width: 400px; height: 800px;overflow-y:scroll; margin-top: 10px"
+            id="message"
+        ></div>
+    </body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        navigator.getUserMedia =
+            navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia;
+
+        var socket = null;
+        var sessionId = null;
+        var connect = document.querySelector('#connect');
+        var sendText = document.querySelector('#sendText');
+        var text2Voice = document.querySelector('#text2Voice');
+        var disconnect = document.querySelector('#disconnect');
+        var container = document.querySelector('#audio-container');
+        var message = document.querySelector('#message');
+
+        connect.addEventListener('click', function() {
+            // socket = io('wss://wechat.iflyknow.com?previewParams={"tag":"baobao"}&callNumber=18818429730&phoneNumber='+$("#chatbot").val(), {
+            //     path:'/websocket/socket.io',
+            //     transports: ['websocket']
+            // });
+            socket = io('wss://10.4.98.133:20009', {
+                path: '/websocket/socket.io',
+                transports: ['websocket'],
+            });
+            console.log(socket.id);
+
+            socket.on('connect', data => {
+                console.log(data);
+                $('#message').append('<div>B:' + data['message'] + '</div>');
+                sessionId = data['sessionId'];
+                var audio = document.createElement('audio');
+                audio.src = 'data:audio/wav;base64,' + data['voice'];
+                audio.controls = true;
+                container.appendChild(audio);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('断开连接');
+            });
+
+            start.disabled = false;
+        });
+
+        disconnect.addEventListener('click', function() {
+            socket.disconnect();
+            start.disabled = true;
+        });
+
+        sendText.addEventListener('click', function() {
+            socket.emit(
+                'text_message',
+                {
+                    requestId: '请求唯一标识',
+                    sessionId: sessionId,
+                    msgType: 'text',
+                    message: $('#text').val(),
+                },
+                data => {
+                    console.log(data);
+                    $('#message').append(
+                        '<div>B:' + data['message'] + '</div>',
+                    );
+                },
+            );
+            $('#message').append('<div>A:' + $('#text').val() + '</div>');
+            $('#text').val('');
+        });
+
+        // text2Voice.addEventListener('click', function() {
+        //     socket.emit("text2voice",
+        //     {
+        //         requestId:"请求唯一标识",
+        //         sessionId:sessionId,
+        //         msgType:"text",
+        //         message:$("#text").val()
+        //     },
+        //     (data) => {
+        //     console.log(data)
+
+        //     });
+        //     $("#text").val("");
+        // });
+
+        function sendVoice(e, buffers, end) {
+            socket.emit(
+                e,
+                {
+                    requestId: '请求唯一标识',
+                    sessionId: sessionId,
+                    voice: buffers,
+                    end: end,
+                },
+                data => {
+                    if (data) {
+                        $('#message').append(
+                            '<div>A:' + data['transformContent'] + '</div>',
+                        );
+                        $('#message').append(
+                            '<div>B:' + data['message'] + '</div>',
+                        );
+                    }
+                },
+            );
+        }
+
+        var SRecorder = function(stream) {
+            config = {};
+
+            config.sampleBits = config.smapleBits || 16;
+            config.sampleRate = config.sampleRate || 16000;
+
+            var context = new AudioContext();
+            var audioInput = context.createMediaStreamSource(stream);
+            var recorder = context.createScriptProcessor(8192, 1, 1);
+
+            var audioEncode = {
+                inputSampleRate: context.sampleRate, //输入采样率
+                inputSampleBits: 16, //输入采样数位 8, 16
+                outputSampleRate: config.sampleRate, //输出采样率
+                oututSampleBits: config.sampleBits, //输出采样数位 8, 16
+                encodeWAV: function(bytes) {
+                    var sampleRate = Math.min(
+                        this.inputSampleRate,
+                        this.outputSampleRate,
+                    );
+                    var sampleBits = Math.min(
+                        this.inputSampleBits,
+                        this.oututSampleBits,
+                    );
+
+                    var compression = parseInt(
+                        this.inputSampleRate / this.outputSampleRate,
+                    );
+                    var length = bytes.length / compression;
+                    var result = new Float32Array(length);
+                    var index = 0,
+                        j = 0;
+                    while (index < length) {
+                        result[index] = bytes[j];
+                        j += compression;
+                        index++;
+                    }
+                    var dataLength = result.length * (sampleBits / 8);
+                    var buffer = new ArrayBuffer(dataLength);
+                    var data = new DataView(buffer);
+                    var offset = 0;
+
+                    if (sampleBits === 8) {
+                        for (var i = 0; i < result.length; i++, offset++) {
+                            var s = Math.max(-1, Math.min(1, result[i]));
+                            var val = s < 0 ? s * 0x8000 : s * 0x7fff;
+                            val = parseInt(255 / (65535 / (val + 32768)));
+                            data.setInt8(offset, val, true);
+                        }
+                    } else {
+                        for (var i = 0; i < result.length; i++, offset += 2) {
+                            var s = Math.max(-1, Math.min(1, result[i]));
+                            data.setInt16(
+                                offset,
+                                s < 0 ? s * 0x8000 : s * 0x7fff,
+                                true,
+                            );
+                        }
+                    }
+
+                    return new Blob([data]);
+                },
+            };
+
+            this.start = function() {
+                audioInput.connect(recorder);
+                recorder.connect(context.destination);
+            };
+
+            this.stop = function() {
+                recorder.disconnect();
+            };
+
+            recorder.onaudioprocess = function(e) {
+                var input = e.inputBuffer.getChannelData(0);
+                var output = e.outputBuffer.getChannelData(0);
+
+                // for (var i = 0; i < e.inputBuffer.length; i++) {
+                //     output[i] = input[i]
+                // }
+
+                sendVoice('voice_message', audioEncode.encodeWAV(input), 0);
+            };
+        };
+
+        SRecorder.get = function(callback) {
+            if (callback) {
+                if (navigator.getUserMedia) {
+                    navigator.getUserMedia(
+                        { audio: true },
+                        function(stream) {
+                            var rec = new SRecorder(stream);
+                            callback(rec);
+                        },
+                        function(error) {
+                            alert('浏览器不支持');
+                        },
+                    );
+                }
+            }
+        };
+
+        SRecorder.get(function(rec) {
+            gRecorder = rec;
+        });
+
+        var start = document.querySelector('#start');
+        var stop = document.querySelector('#stop');
+
+        start.addEventListener('click', function() {
+            this.disabled = true;
+            stop.disabled = false;
+            gRecorder.start();
+        });
+
+        stop.addEventListener('click', function() {
+            this.disabled = true;
+            start.disabled = false;
+            sendVoice('voice_message', null, 1);
+            gRecorder.stop();
+        });
+    </script>
+</html>
